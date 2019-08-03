@@ -16,6 +16,7 @@ import pandas as pd
 import re
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+import logging
 
 # coding=<utf-8>
 
@@ -26,8 +27,7 @@ chat_id = "<YOURCHATID>"  # number
 
 def viki():
     wp.set_lang('tr')
-    try:
-    # try to load the wikipedia page
+    try:  # try to load the wikipedia page
         random_page = wp.random(pages=1)
         daily_wiki = "**Wikili Sabahlar:  \n" + random_page + " \n\n" + wp.summary(str(random_page.encode('utf-8')), sentences=5)
         bot.send_message(chat_id, daily_wiki)
@@ -134,7 +134,7 @@ def handle_location(message):
 # bot.send_message(chat_id,"no wiki today, you are free :)")
 
 
-def tweet_analysis(lat,lon):
+def tweet_analysis(lat, lon):
     consumer_key = '<TWITTERKEY>'
     consumer_secret = '<TWITTERSECRET>'
     access_token = '<TWITTERTOKEN>'
@@ -149,9 +149,9 @@ def tweet_analysis(lat,lon):
         for tweet in tweepy.Cursor(api.search, geocode=lat + ',' + lon + ',' + '0.3km', result_type='recent', count=100, tweet_mode='extended').items(200):
             tweet_text.append(tweet.full_text)
         allwords = ""
-    #for tweet in  tweet_text:
+    # for tweet in  tweet_text:
         allwords = allwords + " \n\n".join(tweet_text[:20])
-        bot.send_message(chat_id,allwords)
+        bot.send_message(chat_id, allwords)
     except socket.timeout:
         print('ops')
 
@@ -197,7 +197,7 @@ gunaydin = ["harika bir gun", "hazir misin?", "enerjiii", "su icmeyi unutma", "h
 
 
 def alarm():
-    target_time = datetime.time(7,0,0) # server time : tsi-3
+    target_time = datetime.time(7, 0, 0)  # server time : tsi-3
     now = datetime.datetime.now()
     alarm_time = datetime.datetime.combine(now.date(), target_time)
     while True:
@@ -217,7 +217,6 @@ t1 = threading.Thread(target=alarm)
 t1.start()
 t2.start()
 
-import logging
 while True:
     try:
         bot.polling(none_stop=True)
