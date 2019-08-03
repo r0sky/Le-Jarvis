@@ -21,37 +21,39 @@ import matplotlib.pyplot as plt
 
 bot_token = "<YOURTOKEN>"
 bot = telebot.TeleBot(token=bot_token)
-chat_id = "<YOURCHATID>" #number
+chat_id = "<YOURCHATID>"  # number
+
 
 def viki():
     wp.set_lang('tr')
     try:
-    #try to load the wikipedia page
+    # try to load the wikipedia page
         random_page = wp.random(pages=1)
         daily_wiki = "**Wikili Sabahlar:  \n" + random_page + " \n\n" + wp.summary(str(random_page.encode('utf-8')), sentences=5)
-        bot.send_message(chat_id,daily_wiki)
+        bot.send_message(chat_id, daily_wiki)
     except wp.exceptions.PageError:
-        #if a "PageError" was raised, ignore it and continue to next link
-        bot.send_message(chat_id,"no wiki today, you are free :)")
+        # if a "PageError" was raised, ignore it and continue to next link
+        bot.send_message(chat_id, "no wiki today, you are free :)")
+
 
 def eksi():
     proxies = {'http': 'http://user:pass@10.10.1.10:3128/'}
-    site= 'https://eksisozluk.com/'
+    site = 'https://eksisozluk.com/'
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
-    r = requests.get(site, headers=headers,proxies=proxies)
-    url=r.url
+    r = requests.get(site, headers=headers, proxies=proxies)
+    url = r.url
     soup = bs(r.content, 'html.parser')
-    gundems = soup.find(class_ ='topic-list partial').find_all('li')
+    gundems = soup.find(class_='topic-list partial').find_all('li')
 
     topic_list_nice = []
-    topic_list_popular =[]
-    topic_list_entrynumber=[]
+    topic_list_popular = []
+    topic_list_entrynumber = []
     topic_list_name = []
-    topic_merged =[]
+    topic_merged = []
 
     for topic in gundems[:9]:
         baslik = topic.find('a')
-        if baslik != None:
+        if baslik is not None:
             temp = str(baslik.get_text())
             number = temp.split()[-1]
             text = ' '.join(temp.split()[:-1])
@@ -64,25 +66,27 @@ def eksi():
             topic_list_popular.append(popular)
             topic_list_entrynumber.append(number)
 
-    bot.send_message(chat_id,"Gundem: \n\n" + " \n".join(topic_merged))
+    bot.send_message(chat_id, "Gundem: \n\n" + " \n".join(topic_merged))
 
     for nice in topic_list_nice:
         url = nice
-        r = requests.get(url,headers=headers)
+        r = requests.get(url, headers=headers)
         soup = bs(r.content, 'html.parser')
 
-        if soup.find(id = 'entry-item-list'):
-            entryler = soup.find(id = 'entry-item-list').find_all('li')
-            iceriks=[]
+        if soup.find(id='entry-item-list'):
+            entryler = soup.find(id='entry-item-list').find_all('li')
+            iceriks = []
             for entry in entryler[:2]:
-                icerik = entry.find(class_ = 'content').get_text(strip=True)
+                icerik = entry.find(class_='content').get_text(strip=True)
                 iceriks.append(icerik)
-        bot.send_message(chat_id,"Gundem Basliklari: \n\n" + " \n\n".join(iceriks) + "\n"+ nice)
+        bot.send_message(chat_id, "Gundem Basliklari: \n\n" + " \n\n".join(iceriks) + "\n" + nice)
+
 
 def readUrl(url):
     with urllib.request.urlopen(url) as url:
         data = json.loads(url.read().decode())
     return data
+
 
 def fahrenheit_converter(fahrenheit):
     return str((fahrenheit-32)/1.8)[:4]
@@ -105,10 +109,8 @@ def weather():
     daily_day = data['DailyForecasts'][0]['Day']['IconPhrase']
     daily_night = data['DailyForecasts'][0]['Night']['IconPhrase']
 
-    bot.send_message(chat_id,"Anlık Hava Durumu: \n\n" + "Sıcaklık: "+current_temperature +"\nHissedilen: "+current_feel_temperature+"\nGökyüzü: "+current_weathertext)
-    bot.send_message(chat_id,"Günlük Hava Durumu: \n\n"+"Minimum: "+daily_minimum+"\nMaximum: "+daily_maximum+"\nÖzet: "+daily_text+"\nGün özet: "+daily_day+"\nGece özet: "+daily_night)
-
-
+    bot.send_message(chat_id, "Anlık Hava Durumu: \n\n" + "Sıcaklık: " + current_temperature + "\nHissedilen: " + current_feel_temperature + "\nGökyüzü: " + current_weathertext)
+    bot.send_message(chat_id, "Günlük Hava Durumu: \n\n" + "Minimum: "+daily_minimum + "\nMaximum: " + daily_maximum + "\nÖzet: " + daily_text + "\nGün özet: " + daily_day + "\nGece özet: " + daily_night)
 
 
 @bot.message_handler(content_types=['location'])
@@ -120,16 +122,17 @@ def handle_location(message):
     lon = str(message.location.longitude)
     markup = types.ReplyKeyboardMarkup(row_width=2)
     action1 = types.KeyboardButton('/twit_analysis')
-    action2= types.KeyboardButton('/exit')
-    markup.add(action1,action2)
-    bot.send_message(chat_id,"Bu lokasyonla ne yapayım?",reply_markup=markup)
+    action2 = types.KeyboardButton('/exit')
+    markup.add(action1, action2)
+    bot.send_message(chat_id, "Bu lokasyonla ne yapayım?", reply_markup=markup)
 
     @bot.message_handler(commands=['twit_analysis'])
     def send_welcome(message):
-        tweet_analysis(lat,lon)
-        print(lat,lon)
+        tweet_analysis(lat, lon)
+        print(lat, lon)
 
-#bot.send_message(chat_id,"no wiki today, you are free :)")
+# bot.send_message(chat_id,"no wiki today, you are free :)")
+
 
 def tweet_analysis(lat,lon):
     consumer_key = '<TWITTERKEY>'
@@ -140,20 +143,17 @@ def tweet_analysis(lat,lon):
     auth = OAuthHandler(consumer_key, consumer_secret)
     auth.set_access_token(access_token, access_token_secret)
     api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, retry_count=3, retry_delay=60)
-    tweet_text=[]
+    tweet_text = []
     import socket
     try:
-        for tweet in tweepy.Cursor(api.search,geocode=lat+','+lon+','+'0.3km',result_type='recent',count=100,tweet_mode='extended').items(200):
+        for tweet in tweepy.Cursor(api.search, geocode=lat + ',' + lon + ',' + '0.3km', result_type='recent', count=100, tweet_mode='extended').items(200):
             tweet_text.append(tweet.full_text)
-        allwords=""
+        allwords = ""
     #for tweet in  tweet_text:
         allwords = allwords + " \n\n".join(tweet_text[:20])
         bot.send_message(chat_id,allwords)
     except socket.timeout:
         print('ops')
-
-
-
 
 
 def all_methods():
@@ -163,7 +163,7 @@ def all_methods():
 
     @bot.message_handler(commands=['naber'])
     def send_welcome(message):
-        bot.reply_to(message,'iyidir aslan ne olsun iste')
+        bot.reply_to(message, 'iyidir aslan ne olsun iste')
 
     @bot.message_handler(commands=['hava'])
     def send_welcome(message):
@@ -186,18 +186,20 @@ def all_methods():
     def send_welcome(message):
         start()
 
-command_list = ['/viki','/eksi','/selam','/naber','/hava','/exit','/help']
+command_list = ['/viki', '/eksi', '/selam', '/naber', '/hava', '/exit', '/help']
+
 
 def start():
-    bot.send_message(chat_id, "Merhaba efendim. Ben Jarvis. Size yardımcı olabilmem için kullanabileceğiniz bazı komutlar aşağıda yer almaktadır. Hizmetinizdeyim.\n\n"+ "\n".join(command_list))
+    bot.send_message(chat_id, "Merhaba efendim. Ben Jarvis. Size yardımcı olabilmem için kullanabileceğiniz bazı komutlar aşağıda yer almaktadır. Hizmetinizdeyim.\n\n" + "\n".join(command_list))
 
 
-gunaydin = ["harika bir gun","hazir misin?","enerjiii","su icmeyi unutma","hadi abi spor zamani","bomba bir gun","niye uyandin ki","niye varsin ki"]
+gunaydin = ["harika bir gun", "hazir misin?", "enerjiii", "su icmeyi unutma", "hadi abi spor zamani", "bomba bir gun", "niye uyandin ki", "niye varsin ki"]
+
 
 def alarm():
-    target_time=datetime.time(7,0,0) #server time : tsi-3
+    target_time = datetime.time(7,0,0) # server time : tsi-3
     now = datetime.datetime.now()
-    alarm_time = datetime.datetime.combine(now.date(),target_time)
+    alarm_time = datetime.datetime.combine(now.date(), target_time)
     while True:
         now = datetime.datetime.now()
         time.sleep((alarm_time - now).total_seconds())
@@ -205,12 +207,8 @@ def alarm():
         eksi()
         weather()
         stri = random.choice(gunaydin) + " " + str(datetime.datetime.now())
-        bot.send_message(chat_id,stri)
-        alarm_time = alarm_time+ timedelta(seconds=20)
-
-
-
-
+        bot.send_message(chat_id, stri)
+        alarm_time = alarm_time + timedelta(seconds=20)
 
 
 t2 = threading.Thread(target=all_methods)
