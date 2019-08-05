@@ -17,7 +17,7 @@ import re
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import logging
-
+from gtts import gTTS
 # coding=<utf-8>
 
 bot_token = "<YOURTOKEN>"
@@ -156,6 +156,67 @@ def tweet_analysis(lat, lon):
         print('ops')
 
 
+def notes():
+    with open("not.json","r") as myfile:
+        data = myfile.read()
+    obj = json.loads(data)
+    message = ""
+    for key in obj["notlar"].keys():
+        message = message + "\n\n" + key.upper() + "\n\n" + "\n".join(obj["notlar"].get(key))
+    bot.send_message(chat_id, "İşte notların: \n\n\n" + message)
+
+
+def note_add(full_message):
+    with open("not.json","r") as myfile:
+        data = myfile.read()
+    obj = json.loads(data)
+    category = full_message.split()[1]
+    if category not in list(obj['notlar'].keys()):
+        bot.send_message(chat_id, "Yeni kategori oluşturuluyor! \n\n" + category)
+        message = " ".join(full_message.split()[2:])
+        obj['notlar'].update({category : [message] })
+        with open('not.json', 'w', encoding='utf-8') as f:
+            json.dump(obj, f, ensure_ascii=False, indent=4)
+        bot.send_message(chat_id, "Başarıyla eklendi! \n\n" + message)
+    else:
+        message = " ".join(full_message.split()[2:])
+        obj['notlar'][category].append(message)
+        with open('not.json', 'w', encoding='utf-8') as f:
+            json.dump(obj, f, ensure_ascii=False, indent=4)
+        bot.send_message(chat_id, "Başarıyla eklendi! \n\n" + message)
+
+
+def note_delete(full_message):
+    with open("not.json","r") as myfile:
+        data = myfile.read()
+    obj = json.loads(data)
+    category = full_message.split()[1]
+    if category not in list(obj['notlar'].keys()):
+        bot.send_message(chat_id, "Böyle kategori yok! \n\n" + category)
+    else:
+        if len(full_message.split()) == 2 :
+            notes = obj['notlar'][category]
+            obj['notlar'].pop(category, None)
+            with open('not.json', 'w', encoding='utf-8') as f:
+                json.dump(obj, f, ensure_ascii=False, indent=4)
+            bot.send_message(chat_id, "Kategori Silindi! \n\n" + category + "\n\n" + "\n".join(notes))
+        elif len(full_message.split()) > 2:
+            to_be_deleted = obj['notlar'][category][int(full_message.split()[2])-1]
+            obj['notlar'][category].remove(to_be_deleted)
+            with open('not.json', 'w', encoding='utf-8') as f:
+                json.dump(obj, f, ensure_ascii=False, indent=4)
+            bot.send_message(chat_id, "Başarıyla silindi! \n\n" + to_be_deleted)
+
+
+def talk_to_me(message):
+    speech = " ".join(message.split()[1:])
+    lang = "tr"
+    myobj = gTTS(text=speech, lang=lang, slow=False)
+    myobj.save("speech.mp3")
+    audio = open('speech.mp3', 'rb')  # should use io without saving
+    bot.send_audio(chat_id, audio)
+
+
 def all_methods():
     @bot.message_handler(commands=['selam'])
     def send_welcome(message):
@@ -182,11 +243,27 @@ def all_methods():
     def send_welcome(message):
         eksi()
 
+    @bot.message_handler(commands=['not'])
+    def send_welcome(message):
+        notes()
+
+    @bot.message_handler(commands=['notekle'])
+    def send_welcome(message):
+        note_add(message.text)
+
+    @bot.message_handler(commands=['notsil'])
+    def send_welcome(message):
+        note_delete(message.text)
+
+    @bot.message_handler(commands=['konus'])
+    def send_welcome(message):
+        talk_to_me(message.text)
+
     @bot.message_handler(commands=['help'])
     def send_welcome(message):
         start()
 
-command_list = ['/viki', '/eksi', '/selam', '/naber', '/hava', '/exit', '/help']
+command_list = ['/viki', '/eksi', '/selam', '/naber', '/hava', '/exit', '/not', '/notekle', '/notsil', '/konus', '/help']
 
 
 def start():
@@ -208,7 +285,7 @@ def alarm():
         weather()
         stri = random.choice(gunaydin) + " " + str(datetime.datetime.now())
         bot.send_message(chat_id, stri)
-        alarm_time = alarm_time + timedelta(seconds=20)
+        alarm_time = alarm_time + timedelta(seconds=86400)
 
 
 t2 = threading.Thread(target=all_methods)
